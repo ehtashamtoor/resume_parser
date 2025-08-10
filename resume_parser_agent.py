@@ -72,12 +72,11 @@ In addition to structured resume fields, you must:
 
 ## Output Requirements
 - Return a valid JSON object matching the `Resume` model.
-- All URLs must be valid or `null`.
+- All URLs must be valid or `null`. if a url You think is not valid for an item(github, linkedin, website etc), return `null` for that.
 - Dates must remain as strings in their original format.
-- If a section is not found, return an empty list or `null` for that field.
+- If a section is not found, return an empty list or `null` for that field according to `Resume` model.
 - Be concise but accurate in descriptions.
 
-Remember: The model already knows the schema, so do not repeat the schema in your output.
 Focus on accurate extraction, normalization, and meaningful analysis.
 """
 
@@ -155,19 +154,18 @@ async def parse_resume(file: UploadFile = File(...)):
                     if page_text:
                         text += page_text + "\n"
 
-                # If no text extracted, try OCR (for scanned PDFs)
-                if not text.strip():
-                    images = convert_from_bytes(content)
-                    for image in images:
-                        text += pytesseract.image_to_string(image) + "\n"
-
-                parsed_content["text"] = text.strip()
-                print("parsed", parsed_content["text"])
+            parsed_content["text"] = text.strip()
+            # print("parsed", parsed_content["text"])
+            if not parsed_content["text"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail="No extractable text found in PDF. It might be a scanned or blank document.",
+                )
 
         else:  # DOCX
             doc = Document(BytesIO(content))
             parsed_content["text"] = "\n".join([para.text for para in doc.paragraphs])
-            print("processing docx", parsed_content["text"])
+            # print("processing docx", parsed_content["text"])
 
         #  call the agent to parse the resume
         if parsed_content["text"].strip() != "":
@@ -175,7 +173,14 @@ async def parse_resume(file: UploadFile = File(...)):
             result: Runner = await Runner.run(
                 starting_agent=resume_parser_agent, input=parsed_content["text"]
             )
-            return {"status": "Resume parsed", "content": result.final_output}
+            return {
+                "status": "Resume parsed",
+                "content": {
+                    "file_type": parsed_content["file_type"],
+                    "filename": parsed_content["filename"],
+                    "structured": result.final_output,
+                },
+            }
         else:
             raise HTTPException(
                 status_code=400, detail="No text could be extracted from the resume."

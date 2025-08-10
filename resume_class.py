@@ -1,5 +1,6 @@
 from typing import List, Optional, Dict
 from pydantic import BaseModel, Field, AnyUrl, EmailStr, field_validator
+import re
 
 
 class Education(BaseModel):
@@ -35,28 +36,30 @@ class Project(BaseModel):
 
 
 class SocialLinks(BaseModel):
-    linkedin: Optional[AnyUrl]
-    github: Optional[AnyUrl]
-    twitter: Optional[AnyUrl]
+    linkedin: Optional[str] = None
+    github: Optional[str] = None
+    twitter: Optional[str] = None
+
+    @field_validator("*", mode="before")
+    def clean_social_urls(cls, v):
+        if not v or str(v).lower() in ["null", "none", "n/a", "nan"]:
+            return None
+        if not re.match(r"^https?://", str(v).strip()):
+            return None
+        return v
 
 
 class Resume(BaseModel):
     name: str = Field(..., description="Full name of the candidate")
     email: str = Field(..., description="Candidate's email address")
-    phone: str = Field(
-        ..., description="Candidate's phone number (e.g., '0301-8649880')"
-    )
+    phone: Optional[str] = Field(default=None, description="Candidate's phone number")
     bio: str = Field(..., description="Brief introduction or summary of the candidate")
     address: Optional[str] = Field(
         None, description="Physical location (e.g., 'Faisalabad, Pakistan')"
     )
-    linkedin: Optional[AnyUrl] = Field(None, description="LinkedIn URL, if available")
-    github: Optional[AnyUrl] = Field(
-        None, description="GitHub profile URL, if available"
-    )
-    website: Optional[AnyUrl] = Field(
-        None, description="Personal or professional website URL, if available"
-    )
+    linkedin: Optional[str] = None
+    github: Optional[str] = None
+    website: Optional[str] = None
 
     social_links: Optional[SocialLinks]
     education: List[Education] = Field(
@@ -65,7 +68,7 @@ class Resume(BaseModel):
     experience: List[Experience] = Field(
         default_factory=list, description="List of work experience entries"
     )
-    skills: List[str] = Field(
+    skills: Optional[List[str]] = Field(
         default_factory=list,
         description="List of skills and tools (e.g., ['JS', 'Python'])",
     )
@@ -97,3 +100,9 @@ class Resume(BaseModel):
             key: None if (val in ("", {}, []) or not str(val).strip()) else val
             for key, val in v.items()
         }
+
+    @field_validator("*", mode="before")
+    def clean_urls(cls, v):
+        if not v or str(v).lower() in ["null", "none", "n/a", "nan"]:
+            return None
+        return v
