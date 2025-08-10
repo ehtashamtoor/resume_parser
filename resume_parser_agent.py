@@ -21,7 +21,7 @@ from datetime import datetime
 load_dotenv()
 
 # Disabling tracing
-set_tracing_disabled(True)
+# set_tracing_disabled(True)
 
 # Color codes for terminal output styling
 RED = "\033[91m"

@@ -1,5 +1,8 @@
-import asyncio
+import asyncio, os
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ✅ Fix event loop issue on Windows
 if sys.platform == "win32":
@@ -9,4 +12,5 @@ import uvicorn
 
 if __name__ == "__main__":
     # ✅ THIS GUARD is required on Windows when using multiprocessing / reload
-    uvicorn.run("resume_parser_agent:app", host="127.0.0.1", port=8000, reload=True)
+    host = os.getenv("HOST", "127.0.0.1")  # default to local
+    uvicorn.run("resume_parser_agent:app", host=host, port=8000, reload=True)
