@@ -17,7 +17,8 @@ RUN uv sync --no-cache
 COPY . .
 
 # Expose FastAPI port
-EXPOSE 8000
+EXPOSE 7860
+# EXPOSE 8000
 
 # Run the app using uv
 CMD ["uv", "run", "python", "main.py"]
