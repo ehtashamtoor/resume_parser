@@ -13,4 +13,6 @@ import uvicorn
 if __name__ == "__main__":
     # ✅ THIS GUARD is required on Windows when using multiprocessing / reload
     host = os.getenv("HOST", "127.0.0.1")  # default to local
-    uvicorn.run("resume_parser_agent:app", host=host, port=8000, reload=True)
+    uvicorn.run(
+        "resume_parser_agent:app", host=host, port=os.getenv("PORT", 8000), reload=True
+    )
